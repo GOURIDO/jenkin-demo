@@ -1,33 +1,47 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = 'my-app:latest'
+    }
+
     stages {
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building...'
+                script {
+                    // Build the Docker image without using 'sh' command
+                    bat "docker build -t ${DOCKER_IMAGE} ."
+                }
             }
         }
+
         stage('Test') {
             steps {
-                echo 'Testing...'
+                script {
+                    // Run npm test using a Node.js container (without 'sh')
+                    bat "docker run --rm ${DOCKER_IMAGE} npm install"
+                    bat "docker run --rm ${DOCKER_IMAGE} npm test"
+                }
             }
         }
+
         stage('Deploy') {
             steps {
                 script {
-                    echo 'Deploying using Docker...'
+                    // Run the Docker container, exposing port 8080
+                    bat "docker run -d -p 8080:8080 --name my-container ${DOCKER_IMAGE}"
+                }
+            }
+        }
 
-                    // Build Docker image
-                    sh 'docker build -t my-node-app .'
-
-                    // Stop and remove old container (if running)
-                    sh 'docker stop my-node-app-container || true'
-                    sh 'docker rm my-node-app-container || true'
-
-                    // Run the container
-                    sh 'docker run -d -p 3000:3000 --name my-node-app-container my-node-app'
+        stage('Clean up') {
+            steps {
+                script {
+                    // Remove the Docker container after use
+                    bat "docker rm -f my-container || echo 'Container already removed'"
                 }
             }
         }
     }
 }
+
