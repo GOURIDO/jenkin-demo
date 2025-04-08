@@ -2,45 +2,58 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'my-app:latest'
+        // Define the Docker image name
+        IMAGE_NAME = 'my-app'
+        // Define the container name
+        CONTAINER_NAME = 'my-container'
     }
 
     stages {
-        stage('Build Docker Image') {
+        // Stage for building the Docker image
+        stage('Build') {
             steps {
                 script {
-                    // Build the Docker image without using 'sh' command
-                    bat "docker build -t ${DOCKER_IMAGE} ."
+                    echo "Building Docker image..."
+                    // Docker build command for Windows
+                    bat 'docker build -t ${IMAGE_NAME} .'
                 }
             }
         }
 
+        // Stage for running tests with Jest
         stage('Test') {
             steps {
                 script {
-                    // Run npm test using a Node.js container (without 'sh')
-                    bat "docker run --rm ${DOCKER_IMAGE} npm install"
-                    bat "docker run --rm ${DOCKER_IMAGE} npm test"
+                    echo "Running tests using Jest..."
+                    // Install dependencies and run tests using npm and Jest
+                    bat 'npm install'
+                    bat 'npm test'
                 }
             }
         }
 
+        // Stage for deploying the Docker container
         stage('Deploy') {
             steps {
                 script {
-                    // Run the Docker container, exposing port 8080
-                    bat "docker run -d -p 8080:8080 --name my-container ${DOCKER_IMAGE}"
+                    echo "Deploying application..."
+                    // Check if the container is already running and stop it if necessary
+                    bat """
+                    docker ps -a --filter "name=${CONTAINER_NAME}" --format "{{.Names}}" | findstr /I ${CONTAINER_NAME} > nul && docker rm -f ${CONTAINER_NAME}
+                    """
+                    // Run the Docker container
+                    bat "docker run -d -p 8080:8080 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
                 }
             }
         }
+    }
 
-        stage('Clean up') {
-            steps {
-                script {
-                    // Remove the Docker container after use
-                    bat "docker rm -f my-container || echo 'Container already removed'"
-                }
-            }
+    post {
+        // Cleanup after the pipeline
+        always {
+            echo "Cleaning up resources..."
+            // Remove Docker container after deployment
+            bat "docker rm -f ${CONTAINER_NAME}"
         }
     }
 }
