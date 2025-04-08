@@ -1,51 +1,29 @@
 pipeline {
     agent any
-
-    environment {
-        IMAGE_NAME = "jenkin-demo"
-    }
-
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build') {
             steps {
-                echo 'Building Docker image...'
-                sh 'docker build -t $IMAGE_NAME .'
+                script {
+                    // Add your build commands (e.g., Maven, Gradle, etc.)
+                    sh 'echo "Building the app"'
+                }
             }
         }
-
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                // Add your test commands here
-                sh 'echo "No tests yet!"'
+                script {
+                    // Add your test commands (e.g., unit tests)
+                    sh 'echo "Running tests"'
+                }
             }
         }
-
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
-                // Add your deploy commands here
-                sh 'echo "Deploy logic goes here"'
+                script {
+                    // Add your deploy commands (e.g., Docker deploy)
+                    sh 'echo "Deploying the app"'
+                }
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Cleaning up resources...'
-            sh 'docker rmi $IMAGE_NAME || true'
-        }
-        failure {
-            echo 'Build failed!'
-        }
-        success {
-            echo 'Build succeeded!'
         }
     }
 }
